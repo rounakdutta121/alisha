@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedFlow AI - Your Personal Healthcare Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0d9488;
+            --primary-hover: #0f766e;
+            --bg-body: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            scroll-behavior: smooth;
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .hero-gradient {
+            background: radial-gradient(circle at top right, #f0fdfa, transparent),
+                        radial-gradient(circle at bottom left, #f8fafc, transparent);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
+        }
+
+        .chat-display {
+            height: 60vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+
+        .hidden { display: none !important; }
+        
+        .card-item {
+            border: 1px solid #e2e8f0;
+            padding: 1.25rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .card-item:hover {
+            border-color: var(--primary);
+            background: #f0fdfa;
+            transform: scale(1.02);
+        }
+
+        .chat-alert {
+            padding: 1rem;
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            color: #92400e;
+            border-radius: 8px;
+        }
+
+        .nav-link {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        #mobile-menu {
+            transition: max-height 0.3s ease-in-out;
+            max-height: 0;
+            overflow: hidden;
+        }
+        #mobile-menu.open {
+            max-height: 300px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="flex flex-col min-h-screen">
+    <nav class="glass-nav sticky top-0 z-50 py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="App.router.go('home')">
+                <div class="w-10 h-10 bg-teal-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">M</div>
+                <span class="text-xl font-bold tracking-tight text-slate-900">MedFlow AI</span>
+            </div>
+            
+            <div id="nav-links-public" class="md:flex items-center gap-8">
+                <a onclick="App.router.scrollTo('features')" class="nav-link font-medium text-slate-600">Features</a>
+                <a onclick="App.router.scrollTo('pricing')" class="nav-link font-medium text-slate-600">Pricing</a>
+                <button onclick="App.router.go('login')" class="text-slate-900 font-semibold hover:text-teal-600 transition-colors">Login</button>
+                <button onclick="App.router.go('signup')" class="btn-primary px-6 py-2.5 rounded-full font-semibold">Get Started</button>
+            </div>
+
+            <div id="nav-links-private" class="hidden md:flex items-center gap-8">
+                <span class="text-slate-500 text-sm font-medium" id="user-plan-badge">Free Plan</span>
+                <button onclick="App.auth.logout()" class="text-red-500 font-semibold hover:text-red-600 transition-colors">Logout</button>
+            </div>
+
+            <button class="md:hidden text-slate-600" onclick="document.getElementById('mobile-menu').classList.toggle('open')">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+        </div>
+
+        <div id="mobile-menu" class="md:hidden bg-white border-t border-slate-100 px-4">
+            <div id="mobile-public" class="flex flex-col gap-4 py-6">
+                <a onclick="App.router.scrollTo('features'); document.getElementById('mobile-menu').classList.remove('open')" class="text-slate-600 font-medium">Features</a>
+                <a onclick="App.router.scrollTo('pricing'); document.getElementById('mobile-menu').classList.remove('open')" class="text-slate-600 font-medium">Pricing</a>
+                <button onclick="App.router.go('login'); document.getElementById('mobile-menu').classList.remove('open')" class="text-slate-900 font-semibold text-left">Login</button>
+                <button onclick="App.router.go('signup'); document.getElementById('mobile-menu').classList.remove('open')" class="btn-primary px-6 py-2.5 rounded-full font-semibold w-full">Get Started</button>
+            </div>
+            <div id="mobile-private" class="hidden flex flex-col gap-4 py-6">
+                <button onclick="App.auth.logout(); document.getElementById('mobile-menu').classList.remove('open')" class="text-red-500 font-semibold text-left">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow">
+        <div id="landing-sections">
+            <section id="page-home" class="hero-gradient">
+                <div class="max-w-7xl mx-auto px-4 pt-20 pb-32 text-center">
+                    <span class="inline-block px-4 py-1.5 mb-6 text-sm font-semibold tracking-wide text-teal-700 uppercase bg-teal-100 rounded-full">Meet Alisha: Your New Health Companion</span>
+                    <h1 class="text-4xl md:text-7xl font-extrabold text-slate-900 mb-8 leading-tight">
+                        Smart Healthcare <br><span class="text-teal-600">Powered by AI.</span>
+                    </h1>
+                    <p class="max-w-2xl mx-auto text-lg md:text-xl text-slate-600 mb-10 px-4">
+                        Get instant medical tips, personalized health guidance, and direct hospital integration. Join thousands managing their health smarter.
+                    </p>
+                    <div class="flex flex-col sm:flex-row justify-center gap-4 px-4">
+                        <button onclick="App.router.go('signup')" class="btn-primary px-10 py-4 rounded-full text-lg font-bold shadow-lg">Start Free Trial</button>
+                        <button onclick="App.router.scrollTo('features')" class="bg-white border border-slate-200 text-slate-900 px-10 py-4 rounded-full text-lg font-bold hover:bg-slate-50 transition-colors">Explore Features</button>
+                    </div>
+                </div>
+
+                <div id="features" class="max-w-7xl mx-auto px-4 py-24 border-t border-slate-100">
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                            <div class="w-12 h-12 bg-teal-100 rounded-2xl flex items-center justify-center mb-6 text-teal-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-4">Instant Tips</h3>
+                            <p class="text-slate-600">Ask Alisha anything about wellness, nutrition, or symptoms and get science-backed answers instantly.</p>
+                        </div>
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                            <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 text-blue-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-10V4m0 10V4m-4 18c0 1.1.9 2 2 2h2a2 2 0 002-2M9 22c0 1.1.9 2 2 2h2a2 2 0 002-2M9 22c0 1.1.9 2 2 2h2a2 2 0 002-2"/></svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-4">Hospital Partnered</h3>
+                            <p class="text-slate-600">Directly connected with top-tier hospitals for a seamless healthcare journey from chat to clinic.</p>
+                        </div>
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 md:col-span-2 lg:col-span-1">
+                            <div class="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center mb-6 text-purple-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-4">Smart Support</h3>
+                            <p class="text-slate-600">Get personalized reminders for medication and follow-ups through Alisha's intelligent AI core.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <section id="page-login" class="hidden flex items-center justify-center py-24 px-4">
+            <div class="bg-white p-6 md:p-10 rounded-3xl shadow-xl border border-slate-100 w-full max-w-md">
+                <h1 class="text-3xl font-bold mb-2">Welcome Back</h1>
+                <p class="text-slate-500 mb-8">Sign in to access Alisha AI.</p>
+                <form id="form-login" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Email Address</label>
+                        <input type="email" id="login-email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-teal-500" placeholder="name@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Password</label>
+                        <input type="password" id="login-password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-teal-500" placeholder="••••••••">
+                    </div>
+                    <button type="submit" id="btn-login-submit" class="w-full btn-primary py-4 rounded-xl font-bold text-lg">Login</button>
+                    <div id="login-error" class="text-red-500 text-sm hidden p-3 bg-red-50 rounded-lg text-center"></div>
+                    <div id="login-success" class="text-teal-600 text-sm hidden p-3 bg-teal-50 rounded-lg text-center"></div>
+                </form>
+                <p class="text-center mt-8 text-slate-500">
+                    Need an account? <button onclick="App.router.go('signup')" class="text-teal-600 font-bold">Register here</button>
+                </p>
+            </div>
+        </section>
+
+        <section id="page-signup" class="hidden flex items-center justify-center py-24 px-4">
+            <div class="bg-white p-6 md:p-10 rounded-3xl shadow-xl border border-slate-100 w-full max-w-md">
+                <h1 class="text-3xl font-bold mb-2">Get Started</h1>
+                <p class="text-slate-500 mb-8">Create your MedFlow AI account.</p>
+                <form id="form-signup" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Full Name</label>
+                        <input type="text" id="signup-name" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-teal-500" placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Email Address</label>
+                        <input type="email" id="signup-email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-teal-500" placeholder="admin@hospital.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Password</label>
+                        <input type="password" id="signup-password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-teal-500" placeholder="••••••••">
+                    </div>
+                    <button type="submit" id="btn-signup-submit" class="w-full btn-primary py-4 rounded-xl font-bold text-lg">Create Account</button>
+                    <div id="signup-error" class="text-red-500 text-sm hidden p-3 bg-red-50 rounded-lg text-center"></div>
+                </form>
+                <p class="text-center mt-8 text-slate-500">
+                    Already have an account? <button onclick="App.router.go('login')" class="text-teal-600 font-bold">Login</button>
+                </p>
+            </div>
+        </section>
+
+        <section id="page-chatbot" class="hidden max-w-4xl mx-auto px-4 py-8 md:py-12 h-full flex flex-col">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl md:text-3xl font-bold mb-1">Chat with Alisha AI</h1>
+                <p class="text-slate-500 text-sm">Personalized healthcare guidance.</p>
+            </div>
+            
+            <div id="chat-window" class="chat-display bg-white border border-slate-200 rounded-3xl p-4 md:p-8 mb-6 shadow-sm flex flex-col gap-4">
+                <div id="chat-content" class="space-y-4">
+                    <p class="text-slate-400 text-center">Ready to assist you with medical tips and wellness info.</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-lg flex gap-3">
+                <input type="text" id="chat-input" placeholder="Ask Alisha anything..." class="flex-grow px-4 py-2 focus:outline-none text-slate-700">
+                <button id="chat-send" class="btn-primary px-4 md:px-8 py-2 rounded-xl font-bold transition-all">
+                    <span class="hidden md:inline">Send</span>
+                    <svg class="md:hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                </button>
+            </div>
+            <div id="chat-error" class="text-red-500 text-sm hidden mt-4 p-3 bg-red-50 rounded-lg text-center"></div>
+        </section>
+
+        <div id="pricing-section" class="max-w-5xl mx-auto px-4 py-24">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+                <p class="text-slate-600">Choose the plan that fits your healthcare needs.</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 items-start">
+                <div class="bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-sm flex flex-col">
+                    <h3 class="text-2xl font-bold mb-2">Free Plan</h3>
+                    <p class="text-slate-500 mb-6">Perfect for wellness seekers</p>
+                    <div class="text-4xl font-extrabold mb-8">$0<span class="text-lg font-normal text-slate-400">/mo</span></div>
+                    <ul class="space-y-4 mb-10 flex-grow">
+                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-teal-500" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> Unlimited Health Tips</li>
+                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-teal-500" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> General AI Chat Support</li>
+                    </ul>
+                    <button onclick="App.router.go('signup')" class="w-full py-4 border-2 border-slate-200 rounded-2xl font-bold hover:bg-slate-50 transition-colors">Sign Up Free</button>
+                </div>
+                <div class="bg-slate-900 text-white p-8 md:p-10 rounded-3xl shadow-2xl relative flex flex-col md:scale-105">
+                    <div class="absolute -top-4 right-8 bg-teal-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">Recommended</div>
+                    <h3 class="text-2xl font-bold mb-2">Premium Plan</h3>
+                    <p class="text-slate-400 mb-6">Full Hospital Integration</p>
+                    <div class="text-4xl font-extrabold mb-8">$299<span class="text-lg font-normal text-slate-500">/one-time</span></div>
+                    <ul class="space-y-4 mb-10 flex-grow">
+                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-teal-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> Direct Hospital Communication</li>
+                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-teal-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> Priority AI Response</li>
+                    </ul>
+                    <button onclick="App.payments.upgrade()" class="w-full py-4 bg-teal-500 rounded-2xl font-bold hover:bg-teal-400 transition-colors shadow-lg shadow-teal-900/40">Upgrade Now</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-slate-50 border-t border-slate-200 py-10 md:py-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <div class="flex flex-col md:flex-row justify-center items-center gap-4 mb-6">
+                <div class="w-8 h-8 bg-slate-300 rounded-lg flex items-center justify-center text-white font-bold">M</div>
+                <span class="font-bold text-slate-800">MedFlow AI</span>
+            </div>
+            <p class="text-slate-400 text-sm">&copy; 2024 MedFlow AI Healthcare Solutions. All rights reserved.</p>
+        </div>
+    </footer>
+</div>
+
+<script>
+    const CONFIG = {
+        BASE_URL: 'https://damnart-ai-guladab.n8n-wsk.com/webhook',
+        ENDPOINTS: {
+            LOGIN: '/login',
+            SIGNUP: '/signup',
+            PAYMENT: '/create-payment',
+            CHAT: '/alisha'
+        }
+    };
+
+    const App = {
+        state: {
+            session: JSON.parse(localStorage.getItem('session')) || null,
+            currentView: 'home'
+        },
+
+        init() {
+            this.router.init();
+            this.forms.init();
+            this.chat.init();
+            
+            if (this.state.session) {
+                this.router.go('chatbot');
+            } else {
+                this.router.go('home');
+            }
+        },
+
+        async api(endpoint, data, method = 'POST') {
+            try {
+                let url = `${CONFIG.BASE_URL}${endpoint}`;
+                const options = {
+                    method: method,
+                    headers: {}
+                };
+
+                if (method === 'GET') {
+                    const params = new URLSearchParams(data).toString();
+                    if (params) url += `?${params}`;
+                } else {
+                    options.headers['Content-Type'] = 'application/json';
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const text = await response.text();
+                if (!text) return { success: true, message: 'Request successful.' };
+                return JSON.parse(text);
+            } catch (error) {
+                console.error('API Error:', error);
+                return { success: false, message: `Request failed: ${error.message}.` };
+            }
+        }
+    };
+
+    App.router = {
+        views: ['home', 'login', 'signup', 'chatbot'],
+        
+        init() {},
+
+        scrollTo(id) {
+            if (App.state.session) return;
+            
+            if (App.state.currentView !== 'home') {
+                this.go('home');
+                setTimeout(() => {
+                    const el = document.getElementById(id);
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            } else {
+                const el = document.getElementById(id);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }
+        },
+
+        go(viewName) {
+            const isLogged = !!App.state.session;
+            const plan = isLogged ? (App.state.session.plan || 'free').toLowerCase() : null;
+
+            if (isLogged && viewName !== 'chatbot') {
+                viewName = 'chatbot';
+            }
+            if (!isLogged && viewName === 'chatbot') {
+                viewName = 'login';
+            }
+
+            this.views.forEach(view => {
+                const el = document.getElementById(`page-${view}`);
+                if (el) el.classList.add('hidden');
+            });
+            const target = document.getElementById(`page-${viewName}`);
+            if (target) target.classList.remove('hidden');
+
+            const landingSections = document.getElementById('landing-sections');
+            const pricingSection = document.getElementById('pricing-section');
+            const publicNav = document.getElementById('nav-links-public');
+            const privateNav = document.getElementById('nav-links-private');
+            const mobilePublic = document.getElementById('mobile-public');
+            const mobilePrivate = document.getElementById('mobile-private');
+            const planBadge = document.getElementById('user-plan-badge');
+
+            if (isLogged) {
+                publicNav.classList.add('hidden');
+                mobilePublic.classList.add('hidden');
+                privateNav.classList.remove('hidden');
+                mobilePrivate.classList.remove('hidden');
+                landingSections.classList.add('hidden');
+                
+                planBadge.innerText = plan.charAt(0).toUpperCase() + plan.slice(1) + " Plan";
+
+                // RE-RE-FIX: Force hide for premium users immediately
+                if (plan === 'premium') {
+                    pricingSection.classList.add('hidden');
+                } else {
+                    pricingSection.classList.remove('hidden');
+                }
+            } else {
+                publicNav.classList.remove('hidden');
+                mobilePublic.classList.remove('hidden');
+                privateNav.classList.add('hidden');
+                mobilePrivate.classList.add('hidden');
+                
+                if (viewName === 'home') {
+                    landingSections.classList.remove('hidden');
+                    pricingSection.classList.remove('hidden');
+                } else {
+                    landingSections.classList.add('hidden');
+                    pricingSection.classList.add('hidden');
+                }
+            }
+
+            App.state.currentView = viewName;
+            window.scrollTo(0, 0);
+        }
+    };
+
+    App.auth = {
+        async login(email, password) {
+            const errorEl = document.getElementById('login-error');
+            const successEl = document.getElementById('login-success');
+            const submitBtn = document.getElementById('btn-login-submit');
+            
+            errorEl.classList.add('hidden');
+            successEl.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Signing in...';
+            
+            const res = await App.api(CONFIG.ENDPOINTS.LOGIN, { email, password }, 'POST');
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Login';
+
+            if (res.success) {
+                localStorage.setItem('session', JSON.stringify(res));
+                App.state.session = res;
+                App.router.go('chatbot');
+            } else {
+                errorEl.innerText = res.message || 'Invalid credentials.';
+                errorEl.classList.remove('hidden');
+            }
+        },
+
+        async signup(name, email, password) {
+            const errorEl = document.getElementById('signup-error');
+            const submitBtn = document.getElementById('btn-signup-submit');
+            
+            errorEl.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Creating account...';
+
+            const res = await App.api(CONFIG.ENDPOINTS.SIGNUP, { name, email, password, plan: 'free' }, 'POST');
+            
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Create Account';
+
+            if (res.success) {
+                App.router.go('login');
+                const successMsg = document.getElementById('login-success');
+                if (successMsg) {
+                    successMsg.innerText = "Account created successfully! Please login.";
+                    successMsg.classList.remove('hidden');
+                }
+            } else {
+                errorEl.innerText = res.message || 'Signup failed.';
+                errorEl.classList.remove('hidden');
+            }
+        },
+
+        logout() {
+            localStorage.clear();
+            App.state.session = null;
+            App.router.go('home');
+        }
+    };
+
+    App.forms = {
+        init() {
+            document.getElementById('form-login').addEventListener('submit', (e) => {
+                e.preventDefault();
+                App.auth.login(
+                    document.getElementById('login-email').value,
+                    document.getElementById('login-password').value
+                );
+            });
+            document.getElementById('form-signup').addEventListener('submit', (e) => {
+                e.preventDefault();
+                App.auth.signup(
+                    document.getElementById('signup-name').value,
+                    document.getElementById('signup-email').value,
+                    document.getElementById('signup-password').value
+                );
+            });
+        }
+    };
+
+    App.chat = {
+        init() {
+            const btn = document.getElementById('chat-send');
+            const input = document.getElementById('chat-input');
+            if (!btn || !input) return;
+
+            btn.addEventListener('click', () => {
+                const text = input.value.trim();
+                if (text) {
+                    this.send(text);
+                    input.value = '';
+                }
+            });
+            input.addEventListener('keypress', (e) => { if (e.key === 'Enter') btn.click(); });
+        },
+
+        async send(message) {
+            const content = document.getElementById('chat-content');
+            const errorEl = document.getElementById('chat-error');
+            errorEl.classList.add('hidden');
+            
+            const userMsg = document.createElement('div');
+            userMsg.className = 'flex justify-end';
+            userMsg.innerHTML = `<div class="bg-teal-600 text-white px-4 py-2 rounded-2xl max-w-[80%]">${message}</div>`;
+            content.appendChild(userMsg);
+
+            const loadingMsg = document.createElement('p');
+            loadingMsg.className = 'text-center text-slate-400 italic text-sm py-2';
+            loadingMsg.innerText = 'Alisha is typing...';
+            content.appendChild(loadingMsg);
+
+            const chatWindow = document.getElementById('chat-window');
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            const session = App.state.session;
+            const payload = {
+                user_id: session ? (session.user_id || session.uid) : 'guest',
+                session_token: session ? session.session_token : '',
+                message: message
+            };
+
+            const res = await App.api(CONFIG.ENDPOINTS.CHAT, payload, 'GET');
+            loadingMsg.remove();
+            
+            if (res.message === "session-expired") {
+                App.auth.logout();
+                return;
+            }
+
+            if (res.success === false) {
+                errorEl.innerText = res.message;
+                errorEl.classList.remove('hidden');
+            } else {
+                this.renderResponse(res);
+            }
+            
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        },
+
+        renderResponse(data) {
+            const content = document.getElementById('chat-content');
+            
+            const textEl = document.createElement('div');
+            textEl.className = 'chat-response-text bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-2 max-w-[90%]';
+            textEl.innerText = data.message || "No message content received.";
+            content.appendChild(textEl);
+
+            const type = (data.type || 'text').toLowerCase();
+
+            if (type === 'Premium') {
+                const uiContainer = document.createElement('div');
+                uiContainer.className = 'flex flex-col gap-3 mt-2';
+                const upgradeBtn = document.createElement('button');
+                upgradeBtn.className = 'btn-primary py-3 rounded-xl font-bold';
+                upgradeBtn.innerText = 'Unlock Premium Features';
+                upgradeBtn.onclick = () => {
+                    const el = document.getElementById('pricing-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                };
+                uiContainer.appendChild(upgradeBtn);
+                content.appendChild(uiContainer);
+            } 
+            else if (type === 'alert') {
+                const alertBox = document.createElement('div');
+                alertBox.className = 'chat-alert mb-4 text-sm';
+                alertBox.innerText = data.message || "Important alert message.";
+                content.appendChild(alertBox);
+            }
+            else if (data.ui && data.ui.items && data.ui.items.length > 0) {
+                const uiContainer = document.createElement('div');
+                uiContainer.className = 'grid sm:grid-cols-2 gap-3 mt-4';
+
+                data.ui.items.forEach(item => {
+                    if (type === 'cards') {
+                        const card = document.createElement('div');
+                        card.className = 'card-item shadow-sm';
+                        card.innerHTML = `
+                            <div class="font-bold text-teal-600 mb-1">${item.label}</div>
+                            <div class="text-xs text-slate-500">${item.description || 'Action required'}</div>
+                        `;
+                        card.onclick = () => this.send(item.action || item.label);
+                        uiContainer.appendChild(card);
+                    } else {
+                        const btn = document.createElement('button');
+                        btn.className = 'bg-white border-2 border-slate-200 text-slate-800 px-4 py-2 rounded-xl font-semibold hover:border-teal-500 transition-colors text-sm';
+                        btn.innerText = item.label;
+                        btn.onclick = () => this.send(item.action || item.label);
+                        uiContainer.appendChild(btn);
+                    }
+                });
+                content.appendChild(uiContainer);
+            }
+        }
+    };
+
+    App.payments = {
+        async upgrade() {
+            const session = App.state.session;
+            if (!session) {
+                App.router.go('signup');
+                return;
+            }
+
+            const payload = {
+                email: session.email,
+                plan: "premium",
+                amount: 299
+            };
+
+            const res = await App.api(CONFIG.ENDPOINTS.PAYMENT, payload, 'POST');
+            if (res.checkout_url) {
+                window.location.href = res.checkout_url;
+            } else {
+                console.error('Payment Error', res.message);
+            }
+        }
+    };
+
+    window.onload = () => App.init();
+</script>
+</body>
+</html>
